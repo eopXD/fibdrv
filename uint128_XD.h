@@ -1,5 +1,4 @@
 // uint128 implemented by 2 unsigned long long
-
 typedef struct uint128 {
 	unsigned long long lo, hi;
 } uint128_XD;
@@ -66,8 +65,9 @@ static inline int is_one ( uint128_XD x, int i ) {
 		return (x.lo >> i) & 1;
 	}
 }
-static inline void mul ( uint128_XD *ret, uint128_XD x, uint128_XD y ) {
+static inline void mul ( uint128_XD *ret, uint128_XD u, uint128_XD l ) {
 	*ret = zero128;
+	/*
 	int a = __builtin_popcountll(x.lo) + __builtin_popcountll(x.hi);
 	int b = __builtin_popcountll(y.lo) + __builtin_popcountll(y.hi);
 	uint128_XD l, u; // u = Multiplicand, l = Multiplier
@@ -77,12 +77,56 @@ static inline void mul ( uint128_XD *ret, uint128_XD x, uint128_XD y ) {
 	} else {
 		u = y;
 		l = x;
-	}
+	}*/
+
 	for ( int i=0; i<128; ++i ) {
 		if ( is_one(l, i) ) {
 			uint128_XD tmp;
 			lsft(&tmp, u, i);
 			add(ret, *ret, tmp);
 		}
+	}
+}
+void display_bs ( unsigned long long x ) {
+	int ar[70] = {};
+	int tmp = 0;
+	printf("%llu\n", x);
+	while ( x > 0 ) {
+		ar[tmp++] = x%2;
+		x >>= 1;
+	}
+	for ( int i=63; i>=0; i-- ) {
+		printf("%d", ar[i]);
+	}
+	puts("");
+}
+static inline void mul_clz ( uint128_XD *ret, uint128_XD u, uint128_XD l ) {
+	*ret = zero128;
+	/*
+	int a = __builtin_popcountll(x.lo) + __builtin_popcountll(x.hi);
+	int b = __builtin_popcountll(y.lo) + __builtin_popcountll(y.hi);
+	uint128_XD l, u; // u = Multiplicand, l = Multiplier
+	uint128_XD tmp;
+	if ( a >= b ) {
+		u = x;
+		l = y;
+	} else {
+		u = y;
+		l = x;
+	}*/
+	uint128_XD tmp;
+	unsigned long long hi = l.hi;
+	while ( hi > 0 ) {
+		int pos = __builtin_clzll(hi);
+		lsft(&tmp, u, 127 - pos);
+		add(ret, *ret, tmp);
+		hi ^= 1ull << (63 - pos);
+	}
+	unsigned long long lo = l.lo;
+	while ( lo > 0 ) {
+		int pos = __builtin_clzll(lo);
+		lsft(&tmp, u, 63 - pos);
+		add(ret, *ret, tmp);
+		lo ^= 1ull << (63-pos);
 	}
 }

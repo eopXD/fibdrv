@@ -34,15 +34,17 @@ void print128_XD ( uint128_XD q ) {
 }
 int main ()
 {
-	srand(time(NULL));
-	int t = 100;
+	//srand(time(NULL));
+	int t = 1;
 	for ( int i=0; i<t; ++i ) {
 		uint128_t a = randull(), b = randull();
-		uint128_XD x = zero128, y = zero128, xy;
+		uint128_XD x = zero128, y = zero128, xy, xy_clz;
 		x.lo = a, y.lo = b;
 		mul(&xy, x, y);
+		mul_clz(&xy_clz, x, y);
 		print128_t(a*b);
 		print128_XD(xy);
+		print128_XD(xy_clz);
 	}
 	return 0;
 }
