@@ -7,8 +7,10 @@
 #include <linux/module.h>
 #include <linux/mutex.h>
 
+#include "uint128_XD.h"
+
 MODULE_LICENSE("Dual MIT/GPL");
-MODULE_AUTHOR("National Cheng Kung University, Taiwan");
+MODULE_AUTHOR("eopXD, Taiwan");
 MODULE_DESCRIPTION("Fibonacci engine driver");
 MODULE_VERSION("0.1");
 
@@ -38,6 +40,20 @@ static long long fib_sequence(long long k)
 
     return f[k];
 }
+static uint128_XD fib_sequence128(long long k)
+{
+    /* FIXME: use clz/ctz and fast algorithms to speed up */
+    uint128_XD f[k + 2];
+
+    f[0] = f[1] = zero128;
+    f[0].lo = f[1].lo = 1;
+
+    for (int i = 2; i <= k; i++) {
+        add(&f[i], f[i-1], f[i-2]);
+    }
+
+    return f[k];
+}
 
 static int fib_open(struct inode *inode, struct file *file)
 {
@@ -61,6 +77,16 @@ static ssize_t fib_read(struct file *file,
                         loff_t *offset)
 {
     return (ssize_t) fib_sequence(*offset);
+}
+
+static ssize_t fib_read128(struct file *file,
+                        char *buf,
+                        size_t size,
+                        loff_t *offset)
+{
+    uint128_XD ret = fib_sequence128(*offset);
+    copy_to_user(buf, &ret, sizeof(uint128_XD));
+    return (ssize_t) 0;
 }
 
 /* write operation is skipped */
@@ -97,7 +123,8 @@ static loff_t fib_device_lseek(struct file *file, loff_t offset, int orig)
 
 const struct file_operations fib_fops = {
     .owner = THIS_MODULE,
-    .read = fib_read,
+    //.read = fib_read,
+    .read = fib_read128,
     .write = fib_write,
     .open = fib_open,
     .release = fib_release,
