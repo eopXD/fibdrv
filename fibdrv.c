@@ -46,7 +46,7 @@ static uint128_XD fib_sequence128(long long k)
     uint128_XD f[k + 2];
 
     f[0] = f[1] = zero128;
-    f[0].lo = f[1].lo = 1;
+    f[1].lo = 1;
 
     for (int i = 2; i <= k; i++) {
         add(&f[i], f[i - 1], f[i - 2]);
