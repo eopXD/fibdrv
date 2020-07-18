@@ -7,6 +7,7 @@
 #include <linux/module.h>
 #include <linux/mutex.h>
 
+#include <linux/uaccess.h>
 #include "uint128_XD.h"
 
 MODULE_LICENSE("Dual MIT/GPL");
@@ -19,16 +20,16 @@ MODULE_VERSION("0.1");
 /* MAX_LENGTH is set to 92 because
  * ssize_t can't fit the number > 92
  */
-#define MAX_LENGTH 92
+#define MAX_LENGTH 100
 
 static dev_t fib_dev = 0;
 static struct cdev *fib_cdev;
 static struct class *fib_class;
 static DEFINE_MUTEX(fib_mutex);
 
-static long long fib_sequence(long long k)
+/*static long long fib_sequence(long long k)
 {
-    /* FIXME: use clz/ctz and fast algorithms to speed up */
+    // FIXME: use clz/ctz and fast algorithms to speed up
     long long f[k + 2];
 
     f[0] = 0;
@@ -39,17 +40,16 @@ static long long fib_sequence(long long k)
     }
 
     return f[k];
-}
+}*/
 static uint128_XD fib_sequence128(long long k)
 {
-    /* FIXME: use clz/ctz and fast algorithms to speed up */
     uint128_XD f[k + 2];
 
     f[0] = f[1] = zero128;
     f[0].lo = f[1].lo = 1;
 
     for (int i = 2; i <= k; i++) {
-        add(&f[i], f[i-1], f[i-2]);
+        add(&f[i], f[i - 1], f[i - 2]);
     }
 
     return f[k];
@@ -71,18 +71,18 @@ static int fib_release(struct inode *inode, struct file *file)
 }
 
 /* calculate the fibonacci number at given offset */
-static ssize_t fib_read(struct file *file,
+/*static ssize_t fib_read(struct file *file,
                         char *buf,
                         size_t size,
                         loff_t *offset)
 {
     return (ssize_t) fib_sequence(*offset);
-}
+}*/
 
 static ssize_t fib_read128(struct file *file,
-                        char *buf,
-                        size_t size,
-                        loff_t *offset)
+                           char *buf,
+                           size_t size,
+                           loff_t *offset)
 {
     uint128_XD ret = fib_sequence128(*offset);
     copy_to_user(buf, &ret, sizeof(uint128_XD));
